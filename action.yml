@@ -10,6 +10,9 @@ inputs:
       order to calculate the version number
     required: true
     default: ${{ github.token }}
+  workflow:
+    description: The workflow name to wait for.
+    required: true
 
 # Define your outputs here.
 outputs: {}

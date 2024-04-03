@@ -8,21 +8,15 @@ import * as github from '@actions/github'
 export async function run(): Promise<void> {
   try {
     const octokit = github.getOctokit(core.getInput('token'))
-
-    // 1. Wait for no more checks in progress or requested
     const startTime = new Date()
-    let page = 1
 
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      // Check timeout
-      if ((new Date().getTime() - startTime.getTime()) / 1000 / 60 > 10) {
-        // 10 min at most
-        throw new Error('timed out waiting for jobs to finish')
-      }
+    // 1. Get all workflow runs (not jobs)
+    const runs = new Set<number>()
+    let page = 0
+    let fetched = 0
+    const pageSize = 100
 
-      // Fetch current page
-      const pageSize = 100
+    do {
       const { data: response } = await octokit.rest.checks.listForRef({
         ...github.context.repo,
         filter: 'latest',
@@ -30,28 +24,45 @@ export async function run(): Promise<void> {
         page,
         ref: github.context.ref
       })
+      fetched = response.check_runs.length
 
-      const checks = response.check_runs.filter(
-        it => it.name !== github.context.job
-      )
-
-      // Check if any are incomplete
-      if (checks.some(it => it.status !== 'completed')) {
-        await wait(100)
-        continue
+      for (const it of response.check_runs) {
+        const runId = (it.details_url?.match(/runs\/(\d+)\/job/) ?? [
+          undefined
+        ])[1]
+        if (runId) {
+          runs.add(Number(runId))
+        }
       }
+      page += 1
+    } while (fetched >= pageSize)
 
-      // Check for errors
-      if (checks.some(it => it.conclusion !== 'success')) {
-        throw new Error('there were unsuccessful checks')
-      }
-
-      // Check if done
-      if (response.check_runs.length < pageSize) {
+    let workflowRun = undefined
+    for (const r of runs) {
+      const { data: candidate } = await octokit.rest.actions.getWorkflowRun({
+        ...github.context.repo,
+        run_id: r
+      })
+      if (candidate.name === core.getInput('workflow')) {
+        workflowRun = candidate
         break
       }
+    }
+    if (workflowRun !== undefined) {
+      while (workflowRun.conclusion !== 'success') {
+        if ((new Date().getTime() - startTime.getTime()) / 1000 / 60 > 10) {
+          // 10 min at most
+          throw new Error('timed out waiting for jobs to finish')
+        }
 
-      page += 1
+        await wait(100)
+        workflowRun = (
+          await octokit.rest.actions.getWorkflowRun({
+            ...github.context.repo,
+            run_id: workflowRun.id
+          })
+        ).data
+      }
     }
   } catch (error) {
     // Fail the workflow run if an error occurs
