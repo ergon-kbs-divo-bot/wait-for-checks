@@ -1,13 +1,13 @@
 # wait-for-checks
 
-A GitHub action that waits for a given workflow on the executing project to be completed.
+A GitHub action that waits for a given workflow on the executing project to be
+completed.
 
 [![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
 [![Check dist/](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml)
 [![CodeQL](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
-
 
 ## Usage
 
@@ -18,15 +18,15 @@ on: push
 
 jobs:
   permissions:
-     actions: read
-     checks: read
+    actions: read
+    checks: read
   wait:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for Build Workflow to Finish
         uses: nt-ergon/wait-for-checks@v1.1.0
         with:
-          workflow: "Build"
+          workflow: 'Build'
 ```
 
 ## Initial Setup
