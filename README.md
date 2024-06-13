@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for Build Workflow to Finish
-        uses: nt-ergon/wait-for-checks@v1.1.0
+        uses: nt-ergon/wait-for-checks@v1.2.0
         with:
           workflow: 'Build'
 ```

@@ -12,20 +12,12 @@ export async function run(): Promise<void> {
 
     // 1. Get all workflow runs (not jobs)
     const runs = new Set<number>()
-    let page = 0
-    let fetched = 0
-    const pageSize = 100
-
-    do {
-      const { data: response } = await octokit.rest.checks.listForRef({
-        ...github.context.repo,
-        filter: 'latest',
-        per_page: pageSize,
-        page,
-        ref: github.context.ref
-      })
-      fetched = response.check_runs.length
-
+    const iterator = octokit.paginate.iterator(octokit.rest.checks.listForRef, {
+      ...github.context.repo,
+      filter: 'latest',
+      ref: github.context.ref
+    })
+    for await (const { data: response } of iterator) {
       for (const it of response.check_runs) {
         const runId = (it.details_url?.match(/runs\/(\d+)\/job/) ?? [
           undefined
@@ -34,8 +26,7 @@ export async function run(): Promise<void> {
           runs.add(Number(runId))
         }
       }
-      page += 1
-    } while (fetched >= pageSize)
+    }
 
     let workflowRun = undefined
     for (const r of runs) {
