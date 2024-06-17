@@ -18,12 +18,14 @@ export async function run(): Promise<void> {
       ref: github.context.ref
     })
     for await (const { data: response } of iterator) {
-      for (const it of response.check_runs) {
-        const runId = (it.details_url?.match(/runs\/(\d+)\/job/) ?? [
-          undefined
-        ])[1]
-        if (runId) {
-          runs.add(Number(runId))
+      if (response.check_runs) {
+        for (const it of response.check_runs) {
+          const runId = (it.details_url?.match(/runs\/(\d+)\/job/) ?? [
+            undefined
+          ])[1]
+          if (runId) {
+            runs.add(Number(runId))
+          }
         }
       }
     }
